@@ -36,14 +36,14 @@ int maximum_value(int value_a, int value_b) {
     }
 }
 
-bool pixel_igual(Pixel pixel_a, Pixel pixel_b) {
-      if (pixel_a.red == pixel_b.red &&
-        pixel_a.green == pixel_b.green &&
-        pixel_a.blue == pixel_b.blue) {
-        return true;
-      } else{
-        return false;
-      }
+bool is_pixel_equals(Pixel pixel_a, Pixel pixel_b) {
+  if (pixel_a.red == pixel_b.red &&
+    pixel_a.green == pixel_b.green &&
+    pixel_a.blue == pixel_b.blue) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 Image gray_scale(Image image) {
@@ -62,56 +62,59 @@ Image gray_scale(Image image) {
   return image;
 }
 
-int mininum_blur_height(int image_height, int image_row, int blur_size) {
-  int half_blur_size = blur_size/2;
-  if (image_height - 1 > image_row + half_blur_size) {
-    return image_row + half_blur_size;
+int mininum_image_blur_pixel(int image_size, int pixel_unit, int blur_size) {
+  int main_minimum_pixel = pixel_unit + blur_size/2;
+  int alternative_minimum_pixel = image_size - 1;
+  if (main_minimum_pixel < alternative_minimum_pixel) {
+    return main_minimum_pixel;
   } else {
-    return image_height - 1;
+    return alternative_minimum_pixel;
   }
 }
 
-int mininum_blur_width(int image_width, int image_column, int blur_size) {
-  int half_blur_size = blur_size/2;
-  if (image_width - 1 > image_column + half_blur_size) {
-    return image_column + half_blur_size;
+int initial_image_blur_pixel(int pixel_position, int blur_size) {
+  int initial_image_pixel = pixel_position - blur_size/2;
+  if (initial_image_pixel < 0) {
+    return 0;
   } else {
-    return image_width - 1;
+    return initial_image_pixel;
   }
 }
 
 Image blur_filter(Image image, int blur_size) {
-    for (unsigned int image_row = 0; image_row < image.height; ++image_row) {
-        for (unsigned int image_column = 0; image_column < image.width; ++image_column) {
-            Pixel media_pixel = {0, 0, 0};
+  for (unsigned int image_row = 0; image_row < image.height; ++image_row) {
+    for (unsigned int image_column = 0; image_column < image.width; ++image_column) {
+      Pixel media_pixel = {0, 0, 0};
 
-            // Achar um nome legal
-            int minimum_height = mininum_blur_height(image.height, image_row, blur_size);
-            int minimum_width = mininum_blur_width(image.width, image_column, blur_size);
+      int minimum_height = mininum_image_blur_pixel(image.height, image_row, blur_size);
+      int minimum_width = mininum_image_blur_pixel(image.width, image_column, blur_size);
 
-            int starting_image_row = (0 > image_row - blur_size/2) ? 0 : image_row - blur_size/2;
-            int starting_image_column = (0 > image_column - blur_size/2) ? 0 : image_column - blur_size/2;
-
-            for (starting_image_row; starting_image_row <= minimum_height; ++starting_image_row) {
-                for (starting_image_column; starting_image_column <= minimum_width; ++starting_image_column) {
-                    Pixel applying_pixel_blur = image.pixel[starting_image_row][starting_image_column];
-                    media_pixel.red += applying_pixel_blur.red;
-                    media_pixel.green += applying_pixel_blur.green;
-                    media_pixel.blue += applying_pixel_blur.blue;
-                }
-            }
-
-            int media_blur_size_pixel = blur_size * blur_size;
-            media_pixel.red /= media_blur_size_pixel;
-            media_pixel.green /= media_blur_size_pixel;
-            media_pixel.blue /= media_blur_size_pixel;
-
-            image.pixel[image_row][image_column] = media_pixel;
-            //Pixel *image_pixel = &image.pixel[image_row][image_column];
-            //image_pixel->red = media_pixel.red;
+      for (
+        int starting_image_row = initial_image_blur_pixel(image_row, blur_size);
+        starting_image_row <= minimum_height;
+        ++starting_image_row
+      ) {
+        for (
+          int starting_image_column = initial_image_blur_pixel(image_column, blur_size);
+          starting_image_column <= minimum_width;
+          ++starting_image_column
+        ) {
+          Pixel blur_pixel = image.pixel[starting_image_row][starting_image_column];
+          media_pixel.red += blur_pixel.red;
+          media_pixel.green += blur_pixel.green;
+          media_pixel.blue += blur_pixel.blue;
         }
+      }
+
+      int media_blur_size_pixel = blur_size * blur_size;
+      media_pixel.red /= media_blur_size_pixel;
+      media_pixel.green /= media_blur_size_pixel;
+      media_pixel.blue /= media_blur_size_pixel;
+
+      image.pixel[image_row][image_column] = media_pixel;
     }
-    return image;
+  }
+  return image;
 }
 
 Image rotate_90_to_right(Image image) {
@@ -124,12 +127,6 @@ Image rotate_90_to_right(Image image) {
 
   for (unsigned int image_row = 0, rotated_image_column = 0; image_row < rotated_image.height; ++image_row, ++rotated_image_column) {
     for (unsigned int image_column, rotated_image_row = 0; image_column >= 0; --image_column, ++rotated_image_row) {
-      // Pixel *pixel = image.pixel[rotated_image_row, rotated_image_column];
-      // Pixel *rotated_pixel = &rotated_image.pixel[image_row, image_column];
-      //
-      // rotated_pixel->red = pixel.red;
-      // rotated_pixel->green = pixel.green;
-      // rotated_pixel->blue = pixel.blue;
 
       rotated_image.pixel[image_row][image_column].red = image.pixel[rotated_image_row][rotated_image_column].red;
       rotated_image.pixel[image_row][image_column].green = image.pixel[rotated_image_row][rotated_image_column].green;
@@ -140,12 +137,12 @@ Image rotate_90_to_right(Image image) {
 }
 
 Image rotate_image(Image image) {
-  int rotation, times_to_rotate = 0;
+  int times_to_rotate = 0;
 
   scanf("%d", &times_to_rotate);
   times_to_rotate %= 4;
 
-  for (rotation; rotation < times_to_rotate; ++rotation) {
+  for (int rotation = 0; rotation < times_to_rotate; ++rotation) {
       image = rotate_90_to_right(image);
   }
   return image;
@@ -166,28 +163,25 @@ Image invert_image_color(Image image) {
 }
 
 // Segmentation fault
-Image cut_image(Image image,
-  int cut_from_image_column, int cut_from_image_row,
-  int cut_to_image_column, int cut_to_image_row) {
-    Image cutted_image;
+Image cut_image(Image image, int cut_from_image_column, int cut_from_image_row, int cut_image_column, int cut_image_row) {
+  Image cutted_image;
+  cutted_image.width = cut_image_column;
+  cutted_image.height = cut_image_row;
 
-    cutted_image.width = cut_to_image_column;
-    cutted_image.height = cut_to_image_row;
+  for(int image_row = 0; image_row < cut_image_row; ++image_row) {
+    for(int image_column = 0; image_column < cut_image_column; ++image_column) {
 
-    for(unsigned int image_row = 0; image_row < cut_to_image_row; ++image_row) {
-        for(unsigned int image_column = 0; image_column < cut_to_image_column; ++image_column) {
-            Pixel image_pixel = image.pixel[image_row+cut_from_image_column][image_column+cut_to_image_column];
-            Pixel *cutted_image_pixel = &cutted_image.pixel[image_row][image_column];
-            cutted_image_pixel->red = image_pixel.red;
-            cutted_image_pixel->green = image_pixel.green;
-            cutted_image_pixel->blue = image_pixel.blue;
-        }
+      int row_pixel = image_row + cut_from_image_row;
+      int column_pixel = image_column + cut_from_image_column;
+
+      cutted_image.pixel[image_row][image_column] = image.pixel[row_pixel][column_pixel];
     }
+  }
 
-    return cutted_image;
+  return cutted_image;
 }
 
-int final_sepia_pixel(sepia_pixel) {
+int final_sepia_pixel(int sepia_pixel) {
   if (MAXIMUM_RGB > sepia_pixel) {
     return sepia_pixel;
   } else {
@@ -195,23 +189,56 @@ int final_sepia_pixel(sepia_pixel) {
   }
 }
 
+Image mirror_image(Image image) {
+  int horizontal = 0;
+
+  scanf("%d", &horizontal);
+
+  int width = image.width, height = image.height;
+
+  if (horizontal == 1) {
+    width /= 2;
+  }
+  else {
+    height /= 2;
+  }
+
+  for (int image_row = 0; image_row < height; ++image_row) {
+    for (int image_column = 0; image_column < width; ++image_column) {
+      int mirrored_image_row = image_row;
+      int mirrored_image_column = image_column;
+
+      if (horizontal == 1) {
+        mirrored_image_column = image.width - 1 - image_column;
+      } else {
+        mirrored_image_row = image.height - 1 - image_row;
+      }
+
+      Pixel pixel = image.pixel[image_row][image_column];
+      image.pixel[image_row][image_column] = image.pixel[mirrored_image_row][mirrored_image_column];
+      image.pixel[mirrored_image_row][mirrored_image_column] = pixel;
+    }
+  }
+  return image;
+}
+
 Image sepia_filter(Image image) {
   for (unsigned int image_row = 0; image_row < image.height; ++image_row) {
-      for (unsigned int image_column = 0; image_column < image.width; ++image_column) {
-          Pixel current_pixel = image.pixel[image_row][image_column];
-          Pixel *pixel = &image.pixel[image_row][image_column];
+    for (unsigned int image_column = 0; image_column < image.width; ++image_column) {
+      Pixel current_pixel = image.pixel[image_row][image_column];
+      Pixel *pixel = &image.pixel[image_row][image_column];
 
-          int sepia_pixel;
+      int sepia_pixel;
 
-          sepia_pixel = current_pixel.red * .393 + current_pixel.green * .769 + current_pixel.blue * .189;
-          pixel->red = final_sepia_pixel(sepia_pixel);
+      sepia_pixel = current_pixel.red * .393 + current_pixel.green * .769 + current_pixel.blue * .189;
+      pixel->red = final_sepia_pixel(sepia_pixel);
 
-          sepia_pixel =  current_pixel.red * .349 + current_pixel.green * .686 + current_pixel.blue * .168;
-          pixel->green = final_sepia_pixel(sepia_pixel);
+      sepia_pixel =  current_pixel.red * .349 + current_pixel.green * .686 + current_pixel.blue * .168;
+      pixel->green = final_sepia_pixel(sepia_pixel);
 
-          sepia_pixel =  current_pixel.red * .272 + current_pixel.green * .534 + current_pixel.blue * .131;
-          pixel->blue = final_sepia_pixel(sepia_pixel);
-      }
+      sepia_pixel =  current_pixel.red * .272 + current_pixel.green * .534 + current_pixel.blue * .131;
+      pixel->blue = final_sepia_pixel(sepia_pixel);
+    }
   }
   return image;
 }
@@ -236,38 +263,10 @@ Image apply_transformation(Image image, int transformation_option) {
           image = rotate_image(image);
           break;
       }
-      // case MIRRORING_FILTER_TRANSFORMATION: {
-      //     int horizontal = 0;
-      //     scanf("%d", &horizontal);
-      //
-      //     int w = img.w, h = img.h;
-      //
-      //     if (horizontal == 1) w /= 2;
-      //     else h /= 2;
-      //
-      //     for (int i2 = 0; i2 < h; ++i2) {
-      //         for (int j = 0; j < w; ++j) {
-      //             int x = i2, y = j;
-      //
-      //             if (horizontal == 1) y = img.w - 1 - j;
-      //             else x = img.h - 1 - i2;
-      //
-      //             Pixel aux1;
-      //             aux1.r = img.pixel[i2][j][0];
-      //             aux1.g = img.pixel[i2][j][1];
-      //             aux1.b = img.pixel[i2][j][2];
-      //
-      //             img.pixel[i2][j][0] = img.pixel[x][y][0];
-      //             img.pixel[i2][j][1] = img.pixel[x][y][1];
-      //             img.pixel[i2][j][2] = img.pixel[x][y][2];
-      //
-      //             img.pixel[x][y][0] = aux1.r;
-      //             img.pixel[x][y][1] = aux1.g;
-      //             img.pixel[x][y][2] = aux1.b;
-      //         }
-      //     }
-      //     break;
-      // }
+      case MIRRORING_FILTER_TRANSFORMATION: {
+          image = mirror_image(image);
+          break;
+      }
       case INVERT_COLOR_TRANSFORMATION: {
           image = invert_image_color(image);
           break;
@@ -275,9 +274,11 @@ Image apply_transformation(Image image, int transformation_option) {
       case CUT_IMAGE_TRANSFORMATION: {
           int cut_from_image_column, cut_from_image_row;
           scanf("%d %d", &cut_from_image_column, &cut_from_image_row);
-          int cut_to_image_column, cut_to_image_row;
-          scanf("%d %d", &cut_to_image_column, &cut_to_image_row);
-          image = cut_image(image, cut_from_image_column, cut_from_image_row, cut_to_image_column, cut_to_image_row);
+
+          int cut_image_column, cut_image_row;
+          scanf("%d %d", &cut_image_column, &cut_image_row);
+
+          image = cut_image(image, cut_from_image_column, cut_from_image_row, cut_image_column, cut_image_row);
           break;
       }
   }
@@ -312,7 +313,6 @@ int main() {
         image = apply_transformation(image, transformation_option);
     }
 
-    // print type of image
     printf("P3\n");
 
     // print width, height and color of image
